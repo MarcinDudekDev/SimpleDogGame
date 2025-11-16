@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doggy Fun Game!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+            font-family: Arial, sans-serif;
+            height: 100vh;
+        }
+
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #dog {
+            position: absolute;
+            font-size: 120px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        .shape {
+            position: absolute;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .circle {
+            border-radius: 50%;
+        }
+
+        .square {
+            border-radius: 10px;
+        }
+
+        .star {
+            font-size: 60px;
+        }
+
+        .bone {
+            font-size: 50px;
+        }
+
+        .heart {
+            font-size: 50px;
+        }
+
+        #message {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 36px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+            border-radius: 20px;
+            font-weight: bold;
+            z-index: 200;
+        }
+
+        .paw-print {
+            position: absolute;
+            font-size: 40px;
+            opacity: 0.6;
+            animation: fadeOut 2s ease forwards;
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="message">Press any key!</div>
+        <div id="dog">🐕</div>
+    </div>
+
+    <script>
+        const dog = document.getElementById('dog');
+        const container = document.getElementById('game-container');
+        const message = document.getElementById('message');
+
+        let dogX = window.innerWidth / 2 - 60;
+        let dogY = window.innerHeight / 2 - 60;
+        let dogFacing = '🐕';
+
+        dog.style.left = dogX + 'px';
+        dog.style.top = dogY + 'px';
+
+        const colors = ['#FF6B6B', '#4ECDC4', '#FFD93D', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#A8E6CF'];
+
+        const dogVariations = ['🐕', '🐶', '🦮', '🐕‍🦺'];
+
+        const shapes = ['🦴', '⭐', '❤️', '🌟', '💛', '💙', '💚', '🧡', '💜'];
+
+        let messageTimeout;
+
+        function showMessage(text) {
+            message.textContent = text;
+            clearTimeout(messageTimeout);
+            messageTimeout = setTimeout(() => {
+                message.textContent = 'Press any key!';
+            }, 2000);
+        }
+
+        function playBark() {
+            // Simple bark sound using Web Audio API
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 200;
+            oscillator.type = 'sawtooth';
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        function createShape(type, x, y) {
+            const shape = document.createElement('div');
+            shape.className = 'shape';
+
+            if (type === 'circle') {
+                shape.classList.add('circle');
+                const size = 60 + Math.random() * 40;
+                shape.style.width = size + 'px';
+                shape.style.height = size + 'px';
+                shape.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            } else if (type === 'square') {
+                shape.classList.add('square');
+                const size = 60 + Math.random() * 40;
+                shape.style.width = size + 'px';
+                shape.style.height = size + 'px';
+                shape.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            } else {
+                // Emoji shapes
+                shape.textContent = shapes[Math.floor(Math.random() * shapes.length)];
+                shape.style.fontSize = (50 + Math.random() * 30) + 'px';
+            }
+
+            shape.style.left = x + 'px';
+            shape.style.top = y + 'px';
+
+            container.appendChild(shape);
+
+            setTimeout(() => {
+                shape.remove();
+            }, 3000);
+        }
+
+        function createPawPrint(x, y) {
+            const paw = document.createElement('div');
+            paw.className = 'paw-print';
+            paw.textContent = '🐾';
+            paw.style.left = x + 'px';
+            paw.style.top = y + 'px';
+            container.appendChild(paw);
+
+            setTimeout(() => {
+                paw.remove();
+            }, 2000);
+        }
+
+        function moveDog(dx, dy) {
+            const step = 50;
+            dogX += dx * step;
+            dogY += dy * step;
+
+            dogX = Math.max(0, Math.min(window.innerWidth - 120, dogX));
+            dogY = Math.max(0, Math.min(window.innerHeight - 120, dogY));
+
+            dog.style.left = dogX + 'px';
+            dog.style.top = dogY + 'px';
+
+            createPawPrint(dogX + 40, dogY + 80);
+        }
+
+        function changeDog() {
+            dogFacing = dogVariations[Math.floor(Math.random() * dogVariations.length)];
+            dog.textContent = dogFacing;
+        }
+
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+
+            if (key === 'arrowup') {
+                moveDog(0, -1);
+                showMessage('Up we go!');
+                playBark();
+            } else if (key === 'arrowdown') {
+                moveDog(0, 1);
+                showMessage('Going down!');
+                playBark();
+            } else if (key === 'arrowleft') {
+                moveDog(-1, 0);
+                dog.style.transform = 'scaleX(-1)';
+                showMessage('Left!');
+                playBark();
+            } else if (key === 'arrowright') {
+                moveDog(1, 0);
+                dog.style.transform = 'scaleX(1)';
+                showMessage('Right!');
+                playBark();
+            } else if (key === ' ') {
+                // Space bar - change dog
+                changeDog();
+                showMessage('Woof! Woof!');
+                playBark();
+                // Create multiple shapes around dog
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        const offsetX = (Math.random() - 0.5) * 200;
+                        const offsetY = (Math.random() - 0.5) * 200;
+                        createShape('emoji', dogX + 60 + offsetX, dogY + 60 + offsetY);
+                    }, i * 100);
+                }
+            } else if (key >= 'a' && key <= 'z') {
+                // Letters create circles
+                const x = Math.random() * (window.innerWidth - 100);
+                const y = Math.random() * (window.innerHeight - 100);
+                createShape('circle', x, y);
+                showMessage(key.toUpperCase() + '!');
+                playBark();
+            } else if (key >= '0' && key <= '9') {
+                // Numbers create squares
+                const x = Math.random() * (window.innerWidth - 100);
+                const y = Math.random() * (window.innerHeight - 100);
+                createShape('square', x, y);
+                showMessage(key + '!');
+                playBark();
+            } else if (key === 'enter') {
+                // Clear all shapes and reset
+                const allShapes = document.querySelectorAll('.shape, .paw-print');
+                allShapes.forEach(s => s.remove());
+                showMessage('All clean!');
+                playBark();
+            }
+        });
+
+        // Click on dog to change it
+        dog.addEventListener('click', () => {
+            changeDog();
+            playBark();
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const offsetX = (Math.random() - 0.5) * 150;
+                    const offsetY = (Math.random() - 0.5) * 150;
+                    createShape('emoji', dogX + 60 + offsetX, dogY + 60 + offsetY);
+                }, i * 100);
+            }
+        });
+    </script>
+</body>
+</html>
