@@ -118,6 +118,7 @@
 
         dog.style.left = dogX + 'px';
         dog.style.top = dogY + 'px';
+        dog.style.transform = 'scaleX(-1)'; // Flip dog to face right initially
 
         const colors = ['#FF6B6B', '#4ECDC4', '#FFD93D', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#A8E6CF'];
 
@@ -231,12 +232,12 @@
                 playBark();
             } else if (key === 'arrowleft') {
                 moveDog(-1, 0);
-                dog.style.transform = 'scaleX(-1)';
+                dog.style.transform = 'scaleX(1)';
                 showMessage('Left!');
                 playBark();
             } else if (key === 'arrowright') {
                 moveDog(1, 0);
-                dog.style.transform = 'scaleX(1)';
+                dog.style.transform = 'scaleX(-1)';
                 showMessage('Right!');
                 playBark();
             } else if (key === ' ') {
