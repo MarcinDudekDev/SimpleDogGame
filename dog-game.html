@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Service Dog Helper!</title>
+    <title>Service Dog Letter Learning!</title>
     <style>
         * {
             margin: 0;
@@ -27,52 +27,45 @@
         #dog {
             position: absolute;
             font-size: 120px;
-            transition: all 0.3s ease;
-            cursor: pointer;
+            transition: all 0.8s ease;
             z-index: 100;
         }
 
         #person {
             position: absolute;
             font-size: 120px;
-            transition: all 0.3s ease;
+            transition: all 0.8s ease;
             z-index: 101;
         }
 
-        .shape {
+        #home, #park {
             position: absolute;
-            animation: fadeIn 0.5s ease;
+            font-size: 100px;
+            z-index: 50;
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.5);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+        #home {
+            left: 50px;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
-        .circle {
-            border-radius: 50%;
+        #park {
+            right: 50px;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
-        .square {
-            border-radius: 10px;
-        }
-
-        .star {
-            font-size: 60px;
-        }
-
-        .bone {
-            font-size: 50px;
-        }
-
-        .heart {
-            font-size: 50px;
+        #letter-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 200px;
+            font-weight: bold;
+            color: #FFD93D;
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 150;
         }
 
         #message {
@@ -106,11 +99,31 @@
                 transform: scale(0.5);
             }
         }
+
+        .celebration {
+            position: absolute;
+            font-size: 60px;
+            animation: celebrate 1s ease forwards;
+        }
+
+        @keyframes celebrate {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5) rotate(360deg);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <div id="message">Help guide the person!</div>
+        <div id="home">🏠</div>
+        <div id="park">🌳</div>
+        <div id="message">Press the letter!</div>
+        <div id="letter-display">A</div>
         <div id="dog">🐕‍🦺</div>
         <div id="person">🧑‍🦯</div>
     </div>
@@ -120,85 +133,90 @@
         const person = document.getElementById('person');
         const container = document.getElementById('game-container');
         const message = document.getElementById('message');
+        const letterDisplay = document.getElementById('letter-display');
+        const homeEl = document.getElementById('home');
+        const parkEl = document.getElementById('park');
 
-        let personX = window.innerWidth / 2;
-        let personY = window.innerHeight / 2 - 60;
+        // Define the path from home to park
+        const path = [
+            { x: 200, y: window.innerHeight / 2 - 60 },  // Start near home
+            { x: window.innerWidth * 0.3, y: window.innerHeight / 2 - 60 },
+            { x: window.innerWidth * 0.5, y: window.innerHeight / 2 - 60 },
+            { x: window.innerWidth * 0.7, y: window.innerHeight / 2 - 60 },
+            { x: window.innerWidth - 300, y: window.innerHeight / 2 - 60 }  // End near park
+        ];
+
+        let currentPathIndex = 0;
+        let goingToPark = true;
+        let currentLetter = '';
         let dogOffsetX = -140; // Dog walks to the left of the person
         let dogOffsetY = 0;
 
+        // Initialize positions
+        let personX = path[0].x;
+        let personY = path[0].y;
+
         person.style.left = personX + 'px';
         person.style.top = personY + 'px';
-        person.style.transform = 'scaleX(-1)'; // Flip person to face right initially
+        person.style.transform = 'scaleX(-1)'; // Face right
 
         dog.style.left = (personX + dogOffsetX) + 'px';
         dog.style.top = (personY + dogOffsetY) + 'px';
-        dog.style.transform = 'scaleX(-1)'; // Flip dog to face right initially
+        dog.style.transform = 'scaleX(-1)'; // Face right
 
-        const colors = ['#FF6B6B', '#4ECDC4', '#FFD93D', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#A8E6CF'];
-
-        const dogVariations = ['🐕', '🐶', '🦮', '🐕‍🦺'];
-
-        const shapes = ['🦴', '⭐', '❤️', '🌟', '💛', '💙', '💚', '🧡', '💜'];
-
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
         let messageTimeout;
 
-        function showMessage(text) {
+        function showMessage(text, duration = 2000) {
             message.textContent = text;
             clearTimeout(messageTimeout);
             messageTimeout = setTimeout(() => {
-                message.textContent = 'Help guide the person!';
-            }, 2000);
+                message.textContent = 'Press the letter!';
+            }, duration);
         }
 
         function playBark() {
-            // Simple bark sound using Web Audio API
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
 
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
 
-            oscillator.frequency.value = 200;
-            oscillator.type = 'sawtooth';
+                oscillator.frequency.value = 200;
+                oscillator.type = 'sawtooth';
 
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
 
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.1);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch (e) {
+                // Audio not supported
+            }
         }
 
-        function createShape(type, x, y) {
-            const shape = document.createElement('div');
-            shape.className = 'shape';
+        function playSuccess() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
 
-            if (type === 'circle') {
-                shape.classList.add('circle');
-                const size = 60 + Math.random() * 40;
-                shape.style.width = size + 'px';
-                shape.style.height = size + 'px';
-                shape.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            } else if (type === 'square') {
-                shape.classList.add('square');
-                const size = 60 + Math.random() * 40;
-                shape.style.width = size + 'px';
-                shape.style.height = size + 'px';
-                shape.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            } else {
-                // Emoji shapes
-                shape.textContent = shapes[Math.floor(Math.random() * shapes.length)];
-                shape.style.fontSize = (50 + Math.random() * 30) + 'px';
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 400;
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (e) {
+                // Audio not supported
             }
-
-            shape.style.left = x + 'px';
-            shape.style.top = y + 'px';
-
-            container.appendChild(shape);
-
-            setTimeout(() => {
-                shape.remove();
-            }, 3000);
         }
 
         function createPawPrint(x, y) {
@@ -214,105 +232,114 @@
             }, 2000);
         }
 
-        function movePair(dx, dy) {
-            const step = 50;
-            personX += dx * step;
-            personY += dy * step;
+        function createCelebration(x, y) {
+            const emojis = ['⭐', '✨', '🎉', '❤️', '💛'];
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const cel = document.createElement('div');
+                    cel.className = 'celebration';
+                    cel.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    cel.style.left = (x + (Math.random() - 0.5) * 100) + 'px';
+                    cel.style.top = (y + (Math.random() - 0.5) * 100) + 'px';
+                    container.appendChild(cel);
 
-            // Keep them on screen
-            personX = Math.max(140, Math.min(window.innerWidth - 120, personX));
-            personY = Math.max(0, Math.min(window.innerHeight - 120, personY));
+                    setTimeout(() => {
+                        cel.remove();
+                    }, 1000);
+                }, i * 100);
+            }
+        }
 
-            // Update person position
+        function getRandomLetter() {
+            return letters[Math.floor(Math.random() * letters.length)];
+        }
+
+        function showNextLetter() {
+            currentLetter = getRandomLetter();
+            letterDisplay.textContent = currentLetter;
+        }
+
+        function moveToNextWaypoint() {
+            if (goingToPark) {
+                currentPathIndex++;
+                if (currentPathIndex >= path.length) {
+                    // Reached the park!
+                    showMessage('At the park! Going home...', 3000);
+                    playSuccess();
+                    createCelebration(personX + 60, personY + 60);
+                    goingToPark = false;
+                    currentPathIndex = path.length - 2;
+                    // Flip to face left
+                    person.style.transform = 'scaleX(1)';
+                    dog.style.transform = 'scaleX(1)';
+                    dogOffsetX = 140; // Dog now on the right side
+                    return;
+                }
+            } else {
+                currentPathIndex--;
+                if (currentPathIndex < 0) {
+                    // Back home!
+                    showMessage('Home safe! Going to park...', 3000);
+                    playSuccess();
+                    createCelebration(personX + 60, personY + 60);
+                    goingToPark = true;
+                    currentPathIndex = 1;
+                    // Flip to face right
+                    person.style.transform = 'scaleX(-1)';
+                    dog.style.transform = 'scaleX(-1)';
+                    dogOffsetX = -140; // Dog back on the left
+                    return;
+                }
+            }
+
+            // Move to waypoint
+            personX = path[currentPathIndex].x;
+            personY = path[currentPathIndex].y;
+
             person.style.left = personX + 'px';
             person.style.top = personY + 'px';
 
-            // Update dog position (follows beside person)
             const dogX = personX + dogOffsetX;
             const dogY = personY + dogOffsetY;
             dog.style.left = dogX + 'px';
             dog.style.top = dogY + 'px';
 
-            // Create paw prints for the dog
+            // Create paw prints
             createPawPrint(dogX + 40, dogY + 80);
         }
 
-        function changeDog() {
-            dogFacing = dogVariations[Math.floor(Math.random() * dogVariations.length)];
-            dog.textContent = dogFacing;
-        }
-
         document.addEventListener('keydown', (e) => {
-            const key = e.key.toLowerCase();
+            const key = e.key.toUpperCase();
 
-            if (key === 'arrowup') {
-                movePair(0, -1);
-                showMessage('Walking up!');
+            if (key === currentLetter) {
+                // Correct letter!
+                showMessage('Good job! Keep going!');
                 playBark();
-            } else if (key === 'arrowdown') {
-                movePair(0, 1);
-                showMessage('Walking down!');
-                playBark();
-            } else if (key === 'arrowleft') {
-                movePair(-1, 0);
-                dog.style.transform = 'scaleX(1)';
-                person.style.transform = 'scaleX(1)';
-                showMessage('Going left!');
-                playBark();
-            } else if (key === 'arrowright') {
-                movePair(1, 0);
-                dog.style.transform = 'scaleX(-1)';
-                person.style.transform = 'scaleX(-1)';
-                showMessage('Going right!');
-                playBark();
-            } else if (key === ' ') {
-                // Space bar - change dog
-                changeDog();
-                showMessage('Good dog!');
-                playBark();
-                // Create multiple shapes around the pair
-                for (let i = 0; i < 5; i++) {
-                    setTimeout(() => {
-                        const offsetX = (Math.random() - 0.5) * 200;
-                        const offsetY = (Math.random() - 0.5) * 200;
-                        createShape('emoji', personX + offsetX, personY + 60 + offsetY);
-                    }, i * 100);
-                }
-            } else if (key >= 'a' && key <= 'z') {
-                // Letters create circles
-                const x = Math.random() * (window.innerWidth - 100);
-                const y = Math.random() * (window.innerHeight - 100);
-                createShape('circle', x, y);
-                showMessage(key.toUpperCase() + '!');
-                playBark();
-            } else if (key >= '0' && key <= '9') {
-                // Numbers create squares
-                const x = Math.random() * (window.innerWidth - 100);
-                const y = Math.random() * (window.innerHeight - 100);
-                createShape('square', x, y);
-                showMessage(key + '!');
-                playBark();
-            } else if (key === 'enter') {
-                // Clear all shapes and reset
-                const allShapes = document.querySelectorAll('.shape, .paw-print');
-                allShapes.forEach(s => s.remove());
-                showMessage('All clean!');
-                playBark();
+                createCelebration(personX + 60, personY + 60);
+                moveToNextWaypoint();
+                showNextLetter();
+            } else if (key >= 'A' && key <= 'Z') {
+                // Wrong letter
+                showMessage('Try again! Press ' + currentLetter);
+                // Small shake effect (optional - could be distracting)
             }
         });
 
-        // Click on dog to change it
+        // Initialize first letter
+        showNextLetter();
+        showMessage('Press ' + currentLetter + ' to walk!', 3000);
+
+        // Click on dog for encouragement
         dog.addEventListener('click', () => {
-            changeDog();
+            showMessage('Good dog! Press ' + currentLetter);
             playBark();
-            showMessage('Pet the dog!');
-            for (let i = 0; i < 3; i++) {
-                setTimeout(() => {
-                    const offsetX = (Math.random() - 0.5) * 150;
-                    const offsetY = (Math.random() - 0.5) * 150;
-                    createShape('emoji', personX + offsetX, personY + 60 + offsetY);
-                }, i * 100);
-            }
+            createCelebration(personX + 60, personY + 60);
+        });
+
+        // Click on person for encouragement
+        person.addEventListener('click', () => {
+            showMessage('Keep going! Press ' + currentLetter);
+            createCelebration(personX + 60, personY + 60);
         });
     </script>
 </body>
