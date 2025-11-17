@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doggy Fun Game!</title>
+    <title>Service Dog Helper!</title>
     <style>
         * {
             margin: 0;
@@ -30,6 +30,13 @@
             transition: all 0.3s ease;
             cursor: pointer;
             z-index: 100;
+        }
+
+        #person {
+            position: absolute;
+            font-size: 120px;
+            transition: all 0.3s ease;
+            z-index: 101;
         }
 
         .shape {
@@ -103,21 +110,28 @@
 </head>
 <body>
     <div id="game-container">
-        <div id="message">Press any key!</div>
-        <div id="dog">🐕</div>
+        <div id="message">Help guide the person!</div>
+        <div id="dog">🐕‍🦺</div>
+        <div id="person">🧑‍🦯</div>
     </div>
 
     <script>
         const dog = document.getElementById('dog');
+        const person = document.getElementById('person');
         const container = document.getElementById('game-container');
         const message = document.getElementById('message');
 
-        let dogX = window.innerWidth / 2 - 60;
-        let dogY = window.innerHeight / 2 - 60;
-        let dogFacing = '🐕';
+        let personX = window.innerWidth / 2;
+        let personY = window.innerHeight / 2 - 60;
+        let dogOffsetX = -140; // Dog walks to the left of the person
+        let dogOffsetY = 0;
 
-        dog.style.left = dogX + 'px';
-        dog.style.top = dogY + 'px';
+        person.style.left = personX + 'px';
+        person.style.top = personY + 'px';
+        person.style.transform = 'scaleX(-1)'; // Flip person to face right initially
+
+        dog.style.left = (personX + dogOffsetX) + 'px';
+        dog.style.top = (personY + dogOffsetY) + 'px';
         dog.style.transform = 'scaleX(-1)'; // Flip dog to face right initially
 
         const colors = ['#FF6B6B', '#4ECDC4', '#FFD93D', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#A8E6CF'];
@@ -132,7 +146,7 @@
             message.textContent = text;
             clearTimeout(messageTimeout);
             messageTimeout = setTimeout(() => {
-                message.textContent = 'Press any key!';
+                message.textContent = 'Help guide the person!';
             }, 2000);
         }
 
@@ -200,17 +214,26 @@
             }, 2000);
         }
 
-        function moveDog(dx, dy) {
+        function movePair(dx, dy) {
             const step = 50;
-            dogX += dx * step;
-            dogY += dy * step;
+            personX += dx * step;
+            personY += dy * step;
 
-            dogX = Math.max(0, Math.min(window.innerWidth - 120, dogX));
-            dogY = Math.max(0, Math.min(window.innerHeight - 120, dogY));
+            // Keep them on screen
+            personX = Math.max(140, Math.min(window.innerWidth - 120, personX));
+            personY = Math.max(0, Math.min(window.innerHeight - 120, personY));
 
+            // Update person position
+            person.style.left = personX + 'px';
+            person.style.top = personY + 'px';
+
+            // Update dog position (follows beside person)
+            const dogX = personX + dogOffsetX;
+            const dogY = personY + dogOffsetY;
             dog.style.left = dogX + 'px';
             dog.style.top = dogY + 'px';
 
+            // Create paw prints for the dog
             createPawPrint(dogX + 40, dogY + 80);
         }
 
@@ -223,34 +246,36 @@
             const key = e.key.toLowerCase();
 
             if (key === 'arrowup') {
-                moveDog(0, -1);
-                showMessage('Up we go!');
+                movePair(0, -1);
+                showMessage('Walking up!');
                 playBark();
             } else if (key === 'arrowdown') {
-                moveDog(0, 1);
-                showMessage('Going down!');
+                movePair(0, 1);
+                showMessage('Walking down!');
                 playBark();
             } else if (key === 'arrowleft') {
-                moveDog(-1, 0);
+                movePair(-1, 0);
                 dog.style.transform = 'scaleX(1)';
-                showMessage('Left!');
+                person.style.transform = 'scaleX(1)';
+                showMessage('Going left!');
                 playBark();
             } else if (key === 'arrowright') {
-                moveDog(1, 0);
+                movePair(1, 0);
                 dog.style.transform = 'scaleX(-1)';
-                showMessage('Right!');
+                person.style.transform = 'scaleX(-1)';
+                showMessage('Going right!');
                 playBark();
             } else if (key === ' ') {
                 // Space bar - change dog
                 changeDog();
-                showMessage('Woof! Woof!');
+                showMessage('Good dog!');
                 playBark();
-                // Create multiple shapes around dog
+                // Create multiple shapes around the pair
                 for (let i = 0; i < 5; i++) {
                     setTimeout(() => {
                         const offsetX = (Math.random() - 0.5) * 200;
                         const offsetY = (Math.random() - 0.5) * 200;
-                        createShape('emoji', dogX + 60 + offsetX, dogY + 60 + offsetY);
+                        createShape('emoji', personX + offsetX, personY + 60 + offsetY);
                     }, i * 100);
                 }
             } else if (key >= 'a' && key <= 'z') {
@@ -280,11 +305,12 @@
         dog.addEventListener('click', () => {
             changeDog();
             playBark();
+            showMessage('Pet the dog!');
             for (let i = 0; i < 3; i++) {
                 setTimeout(() => {
                     const offsetX = (Math.random() - 0.5) * 150;
                     const offsetY = (Math.random() - 0.5) * 150;
-                    createShape('emoji', dogX + 60 + offsetX, dogY + 60 + offsetY);
+                    createShape('emoji', personX + offsetX, personY + 60 + offsetY);
                 }, i * 100);
             }
         });
