@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Math Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', Arial, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #message {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 36px;
+            color: white;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px 30px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 36px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+
+        #menu-button {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 32px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        #menu-button:hover {
+            transform: scale(1.1);
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        #question-area {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        #equation {
+            font-size: 120px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+            margin-bottom: 50px;
+        }
+
+        #fruits-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 50px;
+            min-height: 120px;
+        }
+
+        .fruit-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            max-width: 300px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .fruit {
+            font-size: 60px;
+            animation: pop 0.3s ease;
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .operator {
+            font-size: 100px;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        #answers {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+        }
+
+        .answer-btn {
+            font-size: 64px;
+            width: 120px;
+            height: 120px;
+            background: white;
+            border: 6px solid #FF6B9D;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #FF6B9D;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .answer-btn:hover {
+            transform: scale(1.15);
+            background: #FFD93D;
+            border-color: #FFD93D;
+        }
+
+        .celebration {
+            position: absolute;
+            font-size: 60px;
+            animation: celebrate 1s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes celebrate {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .streak {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 32px;
+            color: #FFD93D;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <a href="index.html" id="menu-button">🏠 Menu</a>
+        <div id="message">Solve the math problem!</div>
+        <div id="score">Score: 0</div>
+        <div class="streak" id="streak"></div>
+
+        <div id="question-area">
+            <div id="equation">2 + 3 = ?</div>
+            <div id="fruits-container"></div>
+            <div id="answers"></div>
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById('game-container');
+        const equation = document.getElementById('equation');
+        const fruitsContainer = document.getElementById('fruits-container');
+        const answersContainer = document.getElementById('answers');
+        const message = document.getElementById('message');
+        const scoreDisplay = document.getElementById('score');
+        const streakDisplay = document.getElementById('streak');
+
+        const fruits = ['🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🥝', '🍑', '🍒'];
+        let score = 0;
+        let streak = 0;
+        let currentAnswer = 0;
+        let messageTimeout;
+
+        function showMessage(text, duration = 2000) {
+            message.textContent = text;
+            clearTimeout(messageTimeout);
+            if (duration > 0) {
+                messageTimeout = setTimeout(() => {
+                    message.textContent = 'Solve the math problem!';
+                }, duration);
+            }
+        }
+
+        function updateStreak() {
+            if (streak > 0) {
+                streakDisplay.textContent = `🔥 ${streak} in a row!`;
+            } else {
+                streakDisplay.textContent = '';
+            }
+        }
+
+        function playSuccess() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 500 + (streak * 30);
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) {}
+        }
+
+        function playWrong() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 200;
+                oscillator.type = 'sawtooth';
+
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (e) {}
+        }
+
+        function createCelebration(x, y) {
+            const emojis = ['⭐', '✨', '🎉', '❤️', '💛', '🌟', '💫', '🎊'];
+            const count = streak > 3 ? 15 : 8;
+
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const cel = document.createElement('div');
+                    cel.className = 'celebration';
+                    cel.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    cel.style.left = (x + (Math.random() - 0.5) * 300) + 'px';
+                    cel.style.top = (y + (Math.random() - 0.5) * 300) + 'px';
+                    container.appendChild(cel);
+
+                    setTimeout(() => {
+                        cel.remove();
+                    }, 1000);
+                }, i * 40);
+            }
+        }
+
+        function createNewProblem() {
+            fruitsContainer.innerHTML = '';
+            answersContainer.innerHTML = '';
+
+            // Generate random math problem
+            const maxNum = Math.min(5 + Math.floor(score / 50), 10);
+            const num1 = Math.floor(Math.random() * maxNum) + 1;
+            const num2 = Math.floor(Math.random() * maxNum) + 1;
+            const isAddition = Math.random() > 0.3 || num1 < num2; // Favor addition, avoid negative results
+
+            let operator, result;
+            if (isAddition) {
+                operator = '+';
+                result = num1 + num2;
+            } else {
+                operator = '-';
+                result = num1 - num2;
+            }
+
+            currentAnswer = result;
+            equation.textContent = `${num1} ${operator} ${num2} = ?`;
+
+            // Visual representation with fruits
+            const fruit1 = fruits[Math.floor(Math.random() * fruits.length)];
+            const fruit2 = fruits[Math.floor(Math.random() * fruits.length)];
+
+            const group1 = document.createElement('div');
+            group1.className = 'fruit-group';
+            for (let i = 0; i < num1; i++) {
+                const fruit = document.createElement('div');
+                fruit.className = 'fruit';
+                fruit.textContent = fruit1;
+                fruit.style.animationDelay = (i * 0.1) + 's';
+                group1.appendChild(fruit);
+            }
+
+            const operatorEl = document.createElement('div');
+            operatorEl.className = 'operator';
+            operatorEl.textContent = operator;
+
+            const group2 = document.createElement('div');
+            group2.className = 'fruit-group';
+            for (let i = 0; i < num2; i++) {
+                const fruit = document.createElement('div');
+                fruit.className = 'fruit';
+                fruit.textContent = fruit2;
+                fruit.style.animationDelay = (i * 0.1) + 's';
+                group2.appendChild(fruit);
+            }
+
+            fruitsContainer.appendChild(group1);
+            fruitsContainer.appendChild(operatorEl);
+            fruitsContainer.appendChild(group2);
+
+            // Generate answer options
+            const answers = new Set([result]);
+            while (answers.size < 4) {
+                const offset = Math.floor(Math.random() * 6) - 3;
+                const option = result + offset;
+                if (option >= 0 && option !== result) {
+                    answers.add(option);
+                }
+            }
+
+            Array.from(answers)
+                .sort(() => Math.random() - 0.5)
+                .forEach(ans => {
+                    const btn = document.createElement('button');
+                    btn.className = 'answer-btn';
+                    btn.textContent = ans;
+                    btn.onclick = () => checkAnswer(ans);
+                    answersContainer.appendChild(btn);
+                });
+        }
+
+        function checkAnswer(selected) {
+            if (selected === currentAnswer) {
+                const points = 10 + (streak * 2);
+                score += points;
+                streak++;
+                scoreDisplay.textContent = 'Score: ' + score;
+                updateStreak();
+
+                const messages = [
+                    '🎉 Correct!',
+                    '⭐ Perfect!',
+                    '🌟 Amazing!',
+                    '✨ Brilliant!',
+                    '🎊 Excellent!'
+                ];
+                showMessage(messages[Math.floor(Math.random() * messages.length)] + ` +${points}`, 1500);
+                playSuccess();
+                createCelebration(window.innerWidth / 2, window.innerHeight / 2);
+
+                setTimeout(() => {
+                    createNewProblem();
+                }, 1500);
+            } else {
+                streak = 0;
+                updateStreak();
+                showMessage('Not quite! Try again!', 1500);
+                playWrong();
+            }
+        }
+
+        // Start first problem
+        createNewProblem();
+    </script>
+</body>
+</html>

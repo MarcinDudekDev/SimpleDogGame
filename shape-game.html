@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shape Recognition Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', Arial, sans-serif;
+            background: linear-gradient(to bottom, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #message {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 42px;
+            color: white;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 100;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 36px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+
+        #menu-button {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 32px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s;
+            z-index: 100;
+        }
+
+        #menu-button:hover {
+            transform: scale(1.1);
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        #target-shape {
+            position: absolute;
+            top: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 56px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .shape {
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.2s;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .shape:hover {
+            transform: scale(1.2);
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .celebration {
+            position: absolute;
+            font-size: 60px;
+            animation: celebrate 1s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes celebrate {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        canvas {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        canvas:hover {
+            filter: brightness(1.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <a href="index.html" id="menu-button">🏠 Menu</a>
+        <div id="message">Find all the circles!</div>
+        <div id="score">Score: 0</div>
+        <div id="target-shape">Find: ⭕ Circle</div>
+    </div>
+
+    <script>
+        const container = document.getElementById('game-container');
+        const message = document.getElementById('message');
+        const scoreDisplay = document.getElementById('score');
+        const targetShapeEl = document.getElementById('target-shape');
+
+        const shapes = [
+            { name: 'Circle', emoji: '⭕', draw: drawCircle },
+            { name: 'Square', emoji: '⬜', draw: drawSquare },
+            { name: 'Triangle', emoji: '🔺', draw: drawTriangle },
+            { name: 'Star', emoji: '⭐', draw: drawStar },
+            { name: 'Heart', emoji: '❤️', draw: drawHeart },
+            { name: 'Diamond', emoji: '💎', draw: drawDiamond }
+        ];
+
+        let score = 0;
+        let currentTargetShape = null;
+        let targetCount = 0;
+        let foundCount = 0;
+        let messageTimeout;
+
+        const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#B388FF', '#FFA500', '#FFB3E6'];
+
+        function showMessage(text, duration = 2000) {
+            message.textContent = text;
+            clearTimeout(messageTimeout);
+            if (duration > 0) {
+                messageTimeout = setTimeout(() => {
+                    message.textContent = `Find all the ${currentTargetShape.name}s!`;
+                }, duration);
+            }
+        }
+
+        function playSuccess() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 600;
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (e) {}
+        }
+
+        function playWrong() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 200;
+                oscillator.type = 'sawtooth';
+
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (e) {}
+        }
+
+        function playComplete() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                [400, 500, 600, 800].forEach((freq, i) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    oscillator.frequency.value = freq;
+                    oscillator.type = 'sine';
+
+                    const startTime = audioContext.currentTime + (i * 0.1);
+                    gainNode.gain.setValueAtTime(0.2, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + 0.2);
+                });
+            } catch (e) {}
+        }
+
+        function createCelebration(x, y) {
+            const emojis = ['⭐', '✨', '🎉', '❤️', '💛', '🌟'];
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    const cel = document.createElement('div');
+                    cel.className = 'celebration';
+                    cel.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    cel.style.left = (x + (Math.random() - 0.5) * 200) + 'px';
+                    cel.style.top = (y + (Math.random() - 0.5) * 200) + 'px';
+                    container.appendChild(cel);
+
+                    setTimeout(() => {
+                        cel.remove();
+                    }, 1000);
+                }, i * 50);
+            }
+        }
+
+        function drawCircle(ctx, size, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size/2 - 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function drawSquare(ctx, size, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(10, 10, size - 20, size - 20);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(10, 10, size - 20, size - 20);
+        }
+
+        function drawTriangle(ctx, size, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(size/2, 10);
+            ctx.lineTo(size - 10, size - 10);
+            ctx.lineTo(10, size - 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function drawStar(ctx, size, color) {
+            ctx.fillStyle = color;
+            const cx = size / 2;
+            const cy = size / 2;
+            const spikes = 5;
+            const outerRadius = size / 2 - 10;
+            const innerRadius = size / 4;
+
+            ctx.beginPath();
+            for (let i = 0; i < spikes * 2; i++) {
+                const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                const angle = (i * Math.PI) / spikes - Math.PI / 2;
+                const x = cx + Math.cos(angle) * radius;
+                const y = cy + Math.sin(angle) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function drawHeart(ctx, size, color) {
+            ctx.fillStyle = color;
+            const x = size / 2;
+            const y = size / 2.5;
+            const width = size / 2;
+
+            ctx.beginPath();
+            ctx.moveTo(x, y + width / 4);
+            ctx.bezierCurveTo(x, y, x - width / 2, y - width / 2, x - width, y);
+            ctx.bezierCurveTo(x - width - width / 2, y, x - width - width / 2, y + width / 2, x - width - width / 2, y + width / 2);
+            ctx.bezierCurveTo(x - width - width / 2, y + width / 2 + width / 2, x, y + width + width / 2, x, y + width + width / 2 + width / 4);
+            ctx.bezierCurveTo(x, y + width + width / 2, x + width + width / 2, y + width / 2 + width / 2, x + width + width / 2, y + width / 2);
+            ctx.bezierCurveTo(x + width + width / 2, y + width / 2, x + width + width / 2, y, x + width, y);
+            ctx.bezierCurveTo(x + width / 2, y - width / 2, x, y, x, y + width / 4);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function drawDiamond(ctx, size, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(size/2, 10);
+            ctx.lineTo(size - 10, size/2);
+            ctx.lineTo(size/2, size - 10);
+            ctx.lineTo(10, size/2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function createShape(shape, x, y, isTarget) {
+            const canvas = document.createElement('canvas');
+            const size = 80 + Math.random() * 40;
+            canvas.width = size;
+            canvas.height = size;
+            canvas.style.position = 'absolute';
+            canvas.style.left = x + 'px';
+            canvas.style.top = y + 'px';
+            canvas.style.animationDelay = (Math.random() * 2) + 's';
+            canvas.className = 'shape';
+
+            const ctx = canvas.getContext('2d');
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            shape.draw(ctx, size, color);
+
+            canvas.onclick = () => {
+                if (isTarget) {
+                    foundCount++;
+                    playSuccess();
+                    createCelebration(x + size/2, y + size/2);
+                    canvas.style.opacity = '0.3';
+                    canvas.onclick = null;
+
+                    if (foundCount >= targetCount) {
+                        score += 20;
+                        scoreDisplay.textContent = 'Score: ' + score;
+                        showMessage('🎉 Amazing! You found them all!', 2000);
+                        playComplete();
+                        createCelebration(window.innerWidth / 2, window.innerHeight / 2);
+
+                        setTimeout(() => {
+                            createNewRound();
+                        }, 2000);
+                    } else {
+                        showMessage(`Great! Find ${targetCount - foundCount} more!`, 1500);
+                    }
+                } else {
+                    showMessage(`That's a ${shape.name}! Look for ${currentTargetShape.name}!`, 1500);
+                    playWrong();
+                }
+            };
+
+            container.appendChild(canvas);
+        }
+
+        function createNewRound() {
+            // Clear previous shapes
+            document.querySelectorAll('.shape').forEach(el => el.remove());
+
+            // Select target shape
+            currentTargetShape = shapes[Math.floor(Math.random() * shapes.length)];
+            targetCount = 3 + Math.floor(Math.random() * 3); // 3-5 targets
+            foundCount = 0;
+
+            targetShapeEl.textContent = `Find: ${currentTargetShape.emoji} ${currentTargetShape.name}`;
+            message.textContent = `Find all the ${currentTargetShape.name}s!`;
+
+            // Create target shapes
+            const positions = [];
+            for (let i = 0; i < targetCount; i++) {
+                let x, y, valid;
+                let attempts = 0;
+
+                do {
+                    x = Math.random() * (window.innerWidth - 150) + 50;
+                    y = Math.random() * (window.innerHeight - 400) + 250;
+                    valid = true;
+
+                    for (const pos of positions) {
+                        const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
+                        if (dist < 150) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    attempts++;
+                } while (!valid && attempts < 50);
+
+                positions.push({ x, y });
+                createShape(currentTargetShape, x, y, true);
+            }
+
+            // Create distractor shapes
+            const numDistractors = 5 + Math.floor(Math.random() * 5);
+            for (let i = 0; i < numDistractors; i++) {
+                let shape;
+                do {
+                    shape = shapes[Math.floor(Math.random() * shapes.length)];
+                } while (shape === currentTargetShape);
+
+                let x, y, valid;
+                let attempts = 0;
+
+                do {
+                    x = Math.random() * (window.innerWidth - 150) + 50;
+                    y = Math.random() * (window.innerHeight - 400) + 250;
+                    valid = true;
+
+                    for (const pos of positions) {
+                        const dist = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
+                        if (dist < 150) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    attempts++;
+                } while (!valid && attempts < 50);
+
+                positions.push({ x, y });
+                createShape(shape, x, y, false);
+            }
+        }
+
+        // Start first round
+        createNewRound();
+    </script>
+</body>
+</html>
