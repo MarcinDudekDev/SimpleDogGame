@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Educational Games for Kids</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 72px;
+            color: white;
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        .subtitle {
+            font-size: 32px;
+            color: #FFD93D;
+            margin-bottom: 50px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .game-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .game-icon {
+            font-size: 100px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .game-card:nth-child(2) .game-icon {
+            animation-delay: 0.5s;
+        }
+
+        .game-card:nth-child(3) .game-icon {
+            animation-delay: 1s;
+        }
+
+        .game-card:nth-child(4) .game-icon {
+            animation-delay: 1.5s;
+        }
+
+        .game-card:nth-child(5) .game-icon {
+            animation-delay: 2s;
+        }
+
+        .game-card:nth-child(6) .game-icon {
+            animation-delay: 2.5s;
+        }
+
+        .game-title {
+            font-size: 28px;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .game-description {
+            font-size: 18px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-15px);
+            }
+        }
+
+        .sparkle {
+            position: fixed;
+            pointer-events: none;
+            animation: sparkleFloat 3s ease-out forwards;
+        }
+
+        @keyframes sparkleFloat {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-200px) scale(0);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Fun Learning Games! 🎮</h1>
+        <div class="subtitle">Choose a game to play and learn!</div>
+
+        <div class="games-grid">
+            <a href="letter-game.html" class="game-card">
+                <div class="game-icon">🐕‍🦺</div>
+                <div class="game-title">Letter Learning</div>
+                <div class="game-description">Help the service dog walk by pressing letters!</div>
+            </a>
+
+            <a href="number-game.html" class="game-card">
+                <div class="game-icon">🔢</div>
+                <div class="game-title">Number Counting</div>
+                <div class="game-description">Count the animals and learn your numbers!</div>
+            </a>
+
+            <a href="color-game.html" class="game-card">
+                <div class="game-icon">🎨</div>
+                <div class="game-title">Color Matching</div>
+                <div class="game-description">Match the colors and paint the rainbow!</div>
+            </a>
+
+            <a href="shape-game.html" class="game-card">
+                <div class="game-icon">⭐</div>
+                <div class="game-title">Shape Recognition</div>
+                <div class="game-description">Find and click the right shapes!</div>
+            </a>
+
+            <a href="math-game.html" class="game-card">
+                <div class="game-icon">➕</div>
+                <div class="game-title">Simple Math</div>
+                <div class="game-description">Add and subtract with fun fruits!</div>
+            </a>
+
+            <a href="memory-game.html" class="game-card">
+                <div class="game-icon">🧠</div>
+                <div class="game-title">Memory Match</div>
+                <div class="game-description">Find matching pairs of cute animals!</div>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Create sparkles when hovering over game cards
+        document.querySelectorAll('.game-card').forEach(card => {
+            card.addEventListener('mouseenter', function(e) {
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        createSparkle(
+                            e.pageX + (Math.random() - 0.5) * 100,
+                            e.pageY + (Math.random() - 0.5) * 100
+                        );
+                    }, i * 100);
+                }
+            });
+        });
+
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.textContent = ['⭐', '✨', '💫', '🌟'][Math.floor(Math.random() * 4)];
+            sparkle.style.left = x + 'px';
+            sparkle.style.top = y + 'px';
+            sparkle.style.fontSize = (20 + Math.random() * 20) + 'px';
+            document.body.appendChild(sparkle);
+
+            setTimeout(() => {
+                sparkle.remove();
+            }, 3000);
+        }
+
+        // Create random floating sparkles
+        setInterval(() => {
+            const x = Math.random() * window.innerWidth;
+            const y = window.innerHeight + 50;
+            createSparkle(x, y);
+        }, 2000);
+    </script>
+</body>
+</html>

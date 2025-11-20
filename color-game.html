@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Matching Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #message {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 42px;
+            color: white;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 36px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+
+        #menu-button {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 32px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        #menu-button:hover {
+            transform: scale(1.1);
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        #color-display {
+            font-size: 72px;
+            font-weight: bold;
+            background: white;
+            padding: 40px 80px;
+            border-radius: 30px;
+            margin-bottom: 80px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            text-transform: uppercase;
+        }
+
+        #items-container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 900px;
+        }
+
+        .color-item {
+            width: 150px;
+            height: 150px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+        }
+
+        .color-item:hover {
+            transform: scale(1.1);
+        }
+
+        .celebration {
+            position: absolute;
+            font-size: 60px;
+            animation: celebrate 1s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes celebrate {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .rainbow {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            background: linear-gradient(to right,
+                red, orange, yellow, green, blue, indigo, violet);
+            opacity: 0;
+            transition: opacity 1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+        }
+
+        .rainbow.show {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <a href="index.html" id="menu-button">🏠 Menu</a>
+        <div id="message">Click the RED item!</div>
+        <div id="score">Score: 0</div>
+        <div id="color-display">RED</div>
+        <div id="items-container"></div>
+        <div id="rainbow" class="rainbow">🌈 Rainbow! 🌈</div>
+    </div>
+
+    <script>
+        const container = document.getElementById('game-container');
+        const itemsContainer = document.getElementById('items-container');
+        const message = document.getElementById('message');
+        const scoreDisplay = document.getElementById('score');
+        const colorDisplay = document.getElementById('color-display');
+        const rainbow = document.getElementById('rainbow');
+
+        const colors = [
+            { name: 'RED', hex: '#FF6B6B', items: ['🍎', '🌹', '❤️', '🍓'] },
+            { name: 'BLUE', hex: '#4ECDC4', items: ['💙', '🦋', '🐳', '🔵'] },
+            { name: 'YELLOW', hex: '#FFE66D', items: ['⭐', '🌟', '🌻', '🍋'] },
+            { name: 'GREEN', hex: '#95E1D3', items: ['🍀', '🌿', '🌲', '💚'] },
+            { name: 'PURPLE', hex: '#B388FF', items: ['🍇', '💜', '🦄', '🔮'] },
+            { name: 'ORANGE', hex: '#FFA500', items: ['🍊', '🧡', '🥕', '🎃'] },
+            { name: 'PINK', hex: '#FFB3E6', items: ['🌸', '🩷', '🎀', '🦩'] }
+        ];
+
+        let score = 0;
+        let currentColor = null;
+        let messageTimeout;
+        let consecutiveCorrect = 0;
+
+        function showMessage(text, duration = 2000) {
+            message.textContent = text;
+            clearTimeout(messageTimeout);
+            if (duration > 0) {
+                messageTimeout = setTimeout(() => {
+                    message.textContent = `Click the ${currentColor.name} item!`;
+                }, duration);
+            }
+        }
+
+        function playSuccess() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 500 + (consecutiveCorrect * 50);
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) {
+                // Audio not supported
+            }
+        }
+
+        function playWrong() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 200;
+                oscillator.type = 'sawtooth';
+
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (e) {
+                // Audio not supported
+            }
+        }
+
+        function createCelebration(x, y) {
+            const emojis = ['⭐', '✨', '🎉', '❤️', '💛', '🌟', '💫'];
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    const cel = document.createElement('div');
+                    cel.className = 'celebration';
+                    cel.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    cel.style.left = (x + (Math.random() - 0.5) * 200) + 'px';
+                    cel.style.top = (y + (Math.random() - 0.5) * 200) + 'px';
+                    container.appendChild(cel);
+
+                    setTimeout(() => {
+                        cel.remove();
+                    }, 1000);
+                }, i * 50);
+            }
+        }
+
+        function createNewRound() {
+            itemsContainer.innerHTML = '';
+
+            // Select target color
+            currentColor = colors[Math.floor(Math.random() * colors.length)];
+            colorDisplay.textContent = currentColor.name;
+            colorDisplay.style.color = currentColor.hex;
+            message.textContent = `Click the ${currentColor.name} item!`;
+
+            // Create a set of colors to show (including the target)
+            const displayColors = [currentColor];
+            const availableColors = colors.filter(c => c !== currentColor);
+
+            // Add 3-5 other random colors
+            const numOthers = 3 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < numOthers && availableColors.length > 0; i++) {
+                const randomIndex = Math.floor(Math.random() * availableColors.length);
+                displayColors.push(availableColors[randomIndex]);
+                availableColors.splice(randomIndex, 1);
+            }
+
+            // Shuffle the display colors
+            displayColors.sort(() => Math.random() - 0.5);
+
+            // Create items for each color
+            displayColors.forEach(color => {
+                const item = document.createElement('div');
+                item.className = 'color-item';
+                item.style.backgroundColor = color.hex;
+                item.textContent = color.items[Math.floor(Math.random() * color.items.length)];
+                item.onclick = () => checkColor(color);
+                itemsContainer.appendChild(item);
+            });
+        }
+
+        function checkColor(selectedColor) {
+            if (selectedColor === currentColor) {
+                score += 10;
+                consecutiveCorrect++;
+                scoreDisplay.textContent = 'Score: ' + score;
+                showMessage('🎉 Perfect! That\'s ' + currentColor.name + '!', 1500);
+                playSuccess();
+                createCelebration(window.innerWidth / 2, window.innerHeight / 2);
+
+                // Show rainbow every 5 correct answers
+                if (consecutiveCorrect % 5 === 0) {
+                    rainbow.classList.add('show');
+                    setTimeout(() => {
+                        rainbow.classList.remove('show');
+                    }, 2000);
+                }
+
+                setTimeout(() => {
+                    createNewRound();
+                }, 1500);
+            } else {
+                consecutiveCorrect = 0;
+                showMessage('Try again! Look for ' + currentColor.name + '!', 2000);
+                playWrong();
+            }
+        }
+
+        // Start first round
+        createNewRound();
+    </script>
+</body>
+</html>

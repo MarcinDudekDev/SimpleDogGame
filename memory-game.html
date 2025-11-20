@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Matching Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', Arial, sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #game-container {
+            width: 100vw;
+            min-height: 100vh;
+            position: relative;
+            padding: 20px;
+        }
+
+        #message {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 36px;
+            color: white;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px 30px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 100;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 32px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 25px;
+            border-radius: 15px;
+            font-weight: bold;
+            text-align: right;
+            line-height: 1.4;
+        }
+
+        #menu-button {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 32px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s;
+            z-index: 100;
+        }
+
+        #menu-button:hover {
+            transform: scale(1.1);
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        #cards-container {
+            display: grid;
+            grid-template-columns: repeat(4, 150px);
+            gap: 20px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin-top: 30px;
+        }
+
+        .card {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        .card-front, .card-back {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 70px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+        }
+
+        .card-back {
+            background: white;
+            transform: rotateY(180deg);
+        }
+
+        .celebration {
+            position: absolute;
+            font-size: 60px;
+            animation: celebrate 1s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes celebrate {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        #win-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        #win-screen.show {
+            display: flex;
+        }
+
+        .win-content {
+            background: white;
+            padding: 60px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .win-content h2 {
+            font-size: 64px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .win-content p {
+            font-size: 32px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .win-content button {
+            font-size: 36px;
+            padding: 20px 50px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .win-content button:hover {
+            background: #764ba2;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <a href="index.html" id="menu-button">🏠 Menu</a>
+        <div id="message">Find matching pairs!</div>
+        <div id="score">
+            Moves: 0<br>
+            Pairs: 0/8
+        </div>
+        <div id="cards-container"></div>
+    </div>
+
+    <div id="win-screen">
+        <div class="win-content">
+            <h2>🎉 You Won! 🎉</h2>
+            <p id="final-score">Great job!</p>
+            <button onclick="location.reload()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById('game-container');
+        const cardsContainer = document.getElementById('cards-container');
+        const message = document.getElementById('message');
+        const scoreDisplay = document.getElementById('score');
+        const winScreen = document.getElementById('win-screen');
+        const finalScore = document.getElementById('final-score');
+
+        const animals = ['🐶', '🐱', '🐰', '🐻', '🐼', '🦁', '🐯', '🐸'];
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let canFlip = true;
+        let messageTimeout;
+
+        function showMessage(text, duration = 2000) {
+            message.textContent = text;
+            clearTimeout(messageTimeout);
+            if (duration > 0) {
+                messageTimeout = setTimeout(() => {
+                    message.textContent = 'Find matching pairs!';
+                }, duration);
+            }
+        }
+
+        function updateScore() {
+            scoreDisplay.innerHTML = `Moves: ${moves}<br>Pairs: ${matchedPairs}/8`;
+        }
+
+        function playFlip() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 400;
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch (e) {}
+        }
+
+        function playMatch() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                [400, 500, 600].forEach((freq, i) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    oscillator.frequency.value = freq;
+                    oscillator.type = 'sine';
+
+                    const startTime = audioContext.currentTime + (i * 0.1);
+                    gainNode.gain.setValueAtTime(0.2, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + 0.2);
+                });
+            } catch (e) {}
+        }
+
+        function playWrong() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 200;
+                oscillator.type = 'sawtooth';
+
+                gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.15);
+            } catch (e) {}
+        }
+
+        function playWin() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                [400, 500, 600, 700, 800].forEach((freq, i) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    oscillator.frequency.value = freq;
+                    oscillator.type = 'sine';
+
+                    const startTime = audioContext.currentTime + (i * 0.15);
+                    gainNode.gain.setValueAtTime(0.2, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + 0.3);
+                });
+            } catch (e) {}
+        }
+
+        function createCelebration(x, y) {
+            const emojis = ['⭐', '✨', '🎉', '❤️', '💛', '🌟'];
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    const cel = document.createElement('div');
+                    cel.className = 'celebration';
+                    cel.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    cel.style.left = (x + (Math.random() - 0.5) * 200) + 'px';
+                    cel.style.top = (y + (Math.random() - 0.5) * 200) + 'px';
+                    container.appendChild(cel);
+
+                    setTimeout(() => {
+                        cel.remove();
+                    }, 1000);
+                }, i * 50);
+            }
+        }
+
+        function createCard(animal, index) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.animal = animal;
+            card.dataset.index = index;
+
+            const front = document.createElement('div');
+            front.className = 'card-front';
+            front.textContent = '?';
+
+            const back = document.createElement('div');
+            back.className = 'card-back';
+            back.textContent = animal;
+
+            card.appendChild(front);
+            card.appendChild(back);
+
+            card.addEventListener('click', () => flipCard(card));
+
+            return card;
+        }
+
+        function flipCard(card) {
+            if (!canFlip || card.classList.contains('flipped') || card.classList.contains('matched')) {
+                return;
+            }
+
+            playFlip();
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                canFlip = false;
+                moves++;
+                updateScore();
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            const animal1 = card1.dataset.animal;
+            const animal2 = card2.dataset.animal;
+
+            if (animal1 === animal2) {
+                // Match found!
+                playMatch();
+                showMessage('🎉 Match found!', 1500);
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+
+                const rect1 = card1.getBoundingClientRect();
+                const rect2 = card2.getBoundingClientRect();
+                createCelebration(rect1.left + rect1.width / 2, rect1.top + rect1.height / 2);
+                createCelebration(rect2.left + rect2.width / 2, rect2.top + rect2.height / 2);
+
+                matchedPairs++;
+                updateScore();
+                flippedCards = [];
+                canFlip = true;
+
+                if (matchedPairs === 8) {
+                    setTimeout(showWinScreen, 1000);
+                }
+            } else {
+                // No match
+                playWrong();
+                showMessage('Try again!', 1000);
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    flippedCards = [];
+                    canFlip = true;
+                }, 1000);
+            }
+        }
+
+        function showWinScreen() {
+            playWin();
+            let stars = '⭐⭐⭐';
+            let rating = 'Amazing!';
+
+            if (moves <= 12) {
+                stars = '⭐⭐⭐';
+                rating = 'Perfect Memory!';
+            } else if (moves <= 16) {
+                stars = '⭐⭐⭐';
+                rating = 'Excellent!';
+            } else if (moves <= 20) {
+                stars = '⭐⭐';
+                rating = 'Great Job!';
+            } else {
+                stars = '⭐';
+                rating = 'Good Try!';
+            }
+
+            finalScore.innerHTML = `${stars}<br>${rating}<br>Completed in ${moves} moves!`;
+            winScreen.classList.add('show');
+
+            // Create celebration across the screen
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    createCelebration(
+                        Math.random() * window.innerWidth,
+                        Math.random() * window.innerHeight
+                    );
+                }, i * 100);
+            }
+        }
+
+        function initGame() {
+            // Create pairs
+            const cardPairs = [];
+            animals.forEach(animal => {
+                cardPairs.push(animal, animal);
+            });
+
+            // Shuffle
+            cardPairs.sort(() => Math.random() - 0.5);
+
+            // Create cards
+            cardPairs.forEach((animal, index) => {
+                const card = createCard(animal, index);
+                cardsContainer.appendChild(card);
+                cards.push(card);
+            });
+        }
+
+        // Start game
+        initGame();
+    </script>
+</body>
+</html>

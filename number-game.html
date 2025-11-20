@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Counting Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', Arial, sans-serif;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #message {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 42px;
+            color: white;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px 40px;
+            border-radius: 20px;
+            font-weight: bold;
+            z-index: 200;
+            text-align: center;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 36px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: bold;
+        }
+
+        #menu-button {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 32px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        #menu-button:hover {
+            transform: scale(1.1);
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .animal {
+            position: absolute;
+            font-size: 80px;
+            cursor: default;
+            animation: appear 0.5s ease;
+            user-select: none;
+        }
+
+        @keyframes appear {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .number-button {
+            position: absolute;
+            bottom: 50px;
+            font-size: 48px;
+            width: 100px;
+            height: 100px;
+            background: white;
+            border: 5px solid #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #667eea;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .number-button:hover {
+            transform: scale(1.1);
+            background: #FFD93D;
+        }
+
+        .celebration {
+            position: absolute;
+            font-size: 60px;
+            animation: celebrate 1s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes celebrate {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .cloud {
+            position: absolute;
+            font-size: 60px;
+            opacity: 0.7;
+            animation: floatCloud 20s linear infinite;
+        }
+
+        @keyframes floatCloud {
+            from {
+                left: -100px;
+            }
+            to {
+                left: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <a href="index.html" id="menu-button">🏠 Menu</a>
+        <div id="message">How many animals do you see?</div>
+        <div id="score">Score: 0</div>
+        <div id="animals-container"></div>
+        <div id="buttons-container"></div>
+    </div>
+
+    <script>
+        const container = document.getElementById('game-container');
+        const animalsContainer = document.getElementById('animals-container');
+        const buttonsContainer = document.getElementById('buttons-container');
+        const message = document.getElementById('message');
+        const scoreDisplay = document.getElementById('score');
+
+        const animals = ['🐶', '🐱', '🐰', '🐻', '🐼', '🦁', '🐯', '🐸', '🐔', '🐷'];
+        let currentCount = 0;
+        let score = 0;
+        let messageTimeout;
+
+        // Add decorative clouds
+        for (let i = 0; i < 3; i++) {
+            const cloud = document.createElement('div');
+            cloud.className = 'cloud';
+            cloud.textContent = '☁️';
+            cloud.style.top = (Math.random() * 30) + '%';
+            cloud.style.animationDelay = (i * 7) + 's';
+            container.appendChild(cloud);
+        }
+
+        function showMessage(text, duration = 2000) {
+            message.textContent = text;
+            clearTimeout(messageTimeout);
+            if (duration > 0) {
+                messageTimeout = setTimeout(() => {
+                    message.textContent = 'How many animals do you see?';
+                }, duration);
+            }
+        }
+
+        function playSuccess() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 500;
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) {
+                // Audio not supported
+            }
+        }
+
+        function playWrong() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 200;
+                oscillator.type = 'sawtooth';
+
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (e) {
+                // Audio not supported
+            }
+        }
+
+        function createCelebration(x, y) {
+            const emojis = ['⭐', '✨', '🎉', '❤️', '💛', '🌟'];
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    const cel = document.createElement('div');
+                    cel.className = 'celebration';
+                    cel.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    cel.style.left = (x + (Math.random() - 0.5) * 200) + 'px';
+                    cel.style.top = (y + (Math.random() - 0.5) * 200) + 'px';
+                    container.appendChild(cel);
+
+                    setTimeout(() => {
+                        cel.remove();
+                    }, 1000);
+                }, i * 50);
+            }
+        }
+
+        function createNewRound() {
+            // Clear previous animals and buttons
+            animalsContainer.innerHTML = '';
+            buttonsContainer.innerHTML = '';
+
+            // Generate random count (1-10)
+            currentCount = Math.floor(Math.random() * 10) + 1;
+
+            // Choose random animal
+            const animal = animals[Math.floor(Math.random() * animals.length)];
+
+            // Place animals randomly on screen
+            const positions = [];
+            for (let i = 0; i < currentCount; i++) {
+                let x, y;
+                let validPosition = false;
+                let attempts = 0;
+
+                // Find a position that doesn't overlap too much
+                while (!validPosition && attempts < 50) {
+                    x = Math.random() * (window.innerWidth - 150) + 50;
+                    y = Math.random() * (window.innerHeight - 350) + 150;
+
+                    validPosition = true;
+                    for (const pos of positions) {
+                        const distance = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
+                        if (distance < 120) {
+                            validPosition = false;
+                            break;
+                        }
+                    }
+                    attempts++;
+                }
+
+                positions.push({ x, y });
+
+                const animalEl = document.createElement('div');
+                animalEl.className = 'animal';
+                animalEl.textContent = animal;
+                animalEl.style.left = x + 'px';
+                animalEl.style.top = y + 'px';
+                animalsContainer.appendChild(animalEl);
+            }
+
+            // Create number buttons (show 4 options)
+            const options = new Set([currentCount]);
+            while (options.size < 4) {
+                const num = Math.floor(Math.random() * 10) + 1;
+                options.add(num);
+            }
+
+            const optionsArray = Array.from(options).sort(() => Math.random() - 0.5);
+            const buttonWidth = 100;
+            const spacing = 30;
+            const totalWidth = (buttonWidth + spacing) * optionsArray.length - spacing;
+            const startX = (window.innerWidth - totalWidth) / 2;
+
+            optionsArray.forEach((num, index) => {
+                const button = document.createElement('button');
+                button.className = 'number-button';
+                button.textContent = num;
+                button.style.left = (startX + (buttonWidth + spacing) * index) + 'px';
+                button.onclick = () => checkAnswer(num);
+                buttonsContainer.appendChild(button);
+            });
+        }
+
+        function checkAnswer(selectedNumber) {
+            if (selectedNumber === currentCount) {
+                score += 10;
+                scoreDisplay.textContent = 'Score: ' + score;
+                showMessage('🎉 Correct! Great counting!', 2000);
+                playSuccess();
+                createCelebration(window.innerWidth / 2, window.innerHeight / 2);
+
+                setTimeout(() => {
+                    createNewRound();
+                }, 2000);
+            } else {
+                showMessage('Try again! Count carefully!', 2000);
+                playWrong();
+            }
+        }
+
+        // Start first round
+        createNewRound();
+    </script>
+</body>
+</html>
