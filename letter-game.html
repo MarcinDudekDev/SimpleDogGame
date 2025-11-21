@@ -44,6 +44,32 @@
             display: none;
         }
 
+        body.montessori #menu-button {
+            background: rgba(93, 78, 55, 0.7);
+        }
+
+        #menu-button {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 32px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s;
+            z-index: 200;
+        }
+
+        #menu-button:hover {
+            transform: scale(1.1);
+            background: rgba(0, 0, 0, 0.7);
+        }
+
         #game-container {
             width: 100vw;
             height: 100vh;
@@ -146,6 +172,7 @@
 </head>
 <body>
     <div id="game-container">
+        <a href="index.html" id="menu-button">🏠 Menu</a>
         <div id="home">🏠</div>
         <div id="park">🌳</div>
         <div id="message">Press the letter!</div>
