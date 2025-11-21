@@ -19,6 +19,64 @@
             align-items: center;
             justify-content: center;
             overflow-x: hidden;
+            transition: background 0.5s ease, font-family 0.3s ease;
+        }
+
+        /* Montessori Mode Styles */
+        body.montessori {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: #f5f1eb;
+        }
+
+        body.montessori .container h1 {
+            color: #5d4e37;
+            text-shadow: none;
+            animation: none;
+            font-size: 48px;
+        }
+
+        body.montessori .subtitle {
+            color: #7a6b5a;
+            text-shadow: none;
+            font-size: 24px;
+        }
+
+        body.montessori .game-card {
+            background: #faf8f5;
+            border: 2px solid #d4c8b8;
+            box-shadow: 0 4px 12px rgba(93, 78, 55, 0.1);
+        }
+
+        body.montessori .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px rgba(93, 78, 55, 0.15);
+        }
+
+        body.montessori .game-icon {
+            animation: none !important;
+            font-size: 80px;
+        }
+
+        body.montessori .game-title {
+            color: #5d4e37;
+            font-size: 24px;
+        }
+
+        body.montessori .game-description {
+            color: #7a6b5a;
+        }
+
+        body.montessori .settings-toggle {
+            background: #e8e0d5;
+            border-color: #c4b8a8;
+        }
+
+        body.montessori .settings-toggle:hover {
+            background: #ddd5c8;
+        }
+
+        body.montessori .toggle-label {
+            color: #5d4e37;
         }
 
         .container {
@@ -41,6 +99,67 @@
             color: #FFD93D;
             margin-bottom: 50px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Settings Toggle */
+        .settings-area {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .settings-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 20px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .settings-toggle:hover {
+            transform: scale(1.02);
+        }
+
+        .toggle-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: #ccc;
+            border-radius: 13px;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #7cb342;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(24px);
         }
 
         .games-grid {
@@ -142,6 +261,13 @@
     </style>
 </head>
 <body>
+    <div class="settings-area">
+        <div class="settings-toggle" onclick="toggleMontessori()">
+            <span class="toggle-label">Montessori Mode</span>
+            <div class="toggle-switch" id="montessori-toggle"></div>
+        </div>
+    </div>
+
     <div class="container">
         <h1>🎮 Fun Learning Games! 🎮</h1>
         <div class="subtitle">Choose a game to play and learn!</div>
@@ -186,9 +312,37 @@
     </div>
 
     <script>
-        // Create sparkles when hovering over game cards
+        // Montessori mode management
+        function isMontessoriMode() {
+            return localStorage.getItem('montessoriMode') === 'true';
+        }
+
+        function toggleMontessori() {
+            const isActive = !isMontessoriMode();
+            localStorage.setItem('montessoriMode', isActive);
+            applyMontessoriMode();
+        }
+
+        function applyMontessoriMode() {
+            const isActive = isMontessoriMode();
+            const toggle = document.getElementById('montessori-toggle');
+
+            if (isActive) {
+                document.body.classList.add('montessori');
+                toggle.classList.add('active');
+            } else {
+                document.body.classList.remove('montessori');
+                toggle.classList.remove('active');
+            }
+        }
+
+        // Apply on page load
+        applyMontessoriMode();
+
+        // Create sparkles when hovering over game cards (disabled in Montessori mode)
         document.querySelectorAll('.game-card').forEach(card => {
             card.addEventListener('mouseenter', function(e) {
+                if (isMontessoriMode()) return;
                 for (let i = 0; i < 5; i++) {
                     setTimeout(() => {
                         createSparkle(
@@ -201,6 +355,7 @@
         });
 
         function createSparkle(x, y) {
+            if (isMontessoriMode()) return;
             const sparkle = document.createElement('div');
             sparkle.className = 'sparkle';
             sparkle.textContent = ['⭐', '✨', '💫', '🌟'][Math.floor(Math.random() * 4)];
@@ -214,8 +369,9 @@
             }, 3000);
         }
 
-        // Create random floating sparkles
+        // Create random floating sparkles (disabled in Montessori mode)
         setInterval(() => {
+            if (isMontessoriMode()) return;
             const x = Math.random() * window.innerWidth;
             const y = window.innerHeight + 50;
             createSparkle(x, y);

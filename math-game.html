@@ -19,6 +19,55 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background 0.5s ease;
+        }
+
+        /* Montessori Mode */
+        body.montessori {
+            background: #f5f1eb;
+            font-family: 'Georgia', serif;
+        }
+
+        body.montessori #message {
+            background: rgba(93, 78, 55, 0.8);
+            font-size: 28px;
+        }
+
+        body.montessori #score {
+            background: rgba(93, 78, 55, 0.7);
+        }
+
+        body.montessori #menu-button {
+            background: rgba(93, 78, 55, 0.7);
+        }
+
+        body.montessori #equation {
+            color: #5d4e37;
+            text-shadow: none;
+            font-size: 80px;
+        }
+
+        body.montessori .fruit {
+            animation: none;
+        }
+
+        body.montessori .answer-btn {
+            border-color: #5d4e37;
+            color: #5d4e37;
+        }
+
+        body.montessori .answer-btn:hover {
+            background: #e8e0d5;
+            border-color: #5d4e37;
+            transform: scale(1.03);
+        }
+
+        body.montessori .streak {
+            display: none;
+        }
+
+        body.montessori .celebration {
+            display: none;
         }
 
         #game-container {
@@ -205,6 +254,14 @@
     </div>
 
     <script>
+        // Montessori mode support
+        function isMontessoriMode() {
+            return localStorage.getItem('montessoriMode') === 'true';
+        }
+        if (isMontessoriMode()) {
+            document.body.classList.add('montessori');
+        }
+
         const container = document.getElementById('game-container');
         const equation = document.getElementById('equation');
         const fruitsContainer = document.getElementById('fruits-container');
@@ -246,10 +303,13 @@
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
 
-                oscillator.frequency.value = 500 + (streak * 30);
+                // Montessori: consistent tone, no escalation
+                const volume = isMontessoriMode() ? 0.1 : 0.3;
+                const freq = isMontessoriMode() ? 500 : 500 + (streak * 30);
+                oscillator.frequency.value = freq;
                 oscillator.type = 'sine';
 
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
 
                 oscillator.start(audioContext.currentTime);
@@ -258,6 +318,7 @@
         }
 
         function playWrong() {
+            if (isMontessoriMode()) return; // No harsh sounds in Montessori mode
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioContext.createOscillator();
@@ -278,6 +339,7 @@
         }
 
         function createCelebration(x, y) {
+            if (isMontessoriMode()) return; // No celebration bursts in Montessori mode
             const emojis = ['⭐', '✨', '🎉', '❤️', '💛', '🌟', '💫', '🎊'];
             const count = streak > 3 ? 15 : 8;
 

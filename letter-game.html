@@ -16,6 +16,32 @@
             background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
             font-family: Arial, sans-serif;
             height: 100vh;
+            transition: background 0.5s ease;
+        }
+
+        /* Montessori Mode */
+        body.montessori {
+            background: #f5f1eb;
+            font-family: 'Georgia', serif;
+        }
+
+        body.montessori #letter-display {
+            color: #5d4e37;
+            text-shadow: none;
+            font-size: 150px;
+        }
+
+        body.montessori #message {
+            background: rgba(93, 78, 55, 0.8);
+            font-size: 28px;
+        }
+
+        body.montessori .paw-print {
+            display: none;
+        }
+
+        body.montessori .celebration {
+            display: none;
         }
 
         #game-container {
@@ -129,6 +155,14 @@
     </div>
 
     <script>
+        // Montessori mode support
+        function isMontessoriMode() {
+            return localStorage.getItem('montessoriMode') === 'true';
+        }
+        if (isMontessoriMode()) {
+            document.body.classList.add('montessori');
+        }
+
         const dog = document.getElementById('dog');
         const person = document.getElementById('person');
         const container = document.getElementById('game-container');
@@ -176,6 +210,7 @@
         }
 
         function playBark() {
+            if (isMontessoriMode()) return; // Quiet mode
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioContext.createOscillator();
@@ -206,10 +241,12 @@
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
 
+                // Montessori: softer, simpler tone
+                const volume = isMontessoriMode() ? 0.1 : 0.2;
                 oscillator.frequency.value = 400;
                 oscillator.type = 'sine';
 
-                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
 
                 oscillator.start(audioContext.currentTime);
