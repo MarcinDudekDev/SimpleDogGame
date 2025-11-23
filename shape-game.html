@@ -17,6 +17,7 @@
             height: 100vh;
             overflow: hidden;
             transition: background 0.5s ease;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="68" viewBox="0 0 24 34"><path d="M3 2 L3 26 L9 20 L13 30 L17 28 L13 18 L21 18 Z" fill="white" stroke="black" stroke-width="1.5"/></svg>') 0 0, auto;
         }
 
         /* Montessori Mode */
@@ -374,23 +375,29 @@
 
         function drawHeart(ctx, size, color) {
             ctx.fillStyle = color;
-            const x = size / 2;
-            const y = size / 2.5;
-            const width = size / 2;
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const scale = (size - 25) / 100; // Scale to fit with margins
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.scale(scale, scale);
 
             ctx.beginPath();
-            ctx.moveTo(x, y + width / 4);
-            ctx.bezierCurveTo(x, y, x - width / 2, y - width / 2, x - width, y);
-            ctx.bezierCurveTo(x - width - width / 2, y, x - width - width / 2, y + width / 2, x - width - width / 2, y + width / 2);
-            ctx.bezierCurveTo(x - width - width / 2, y + width / 2 + width / 2, x, y + width + width / 2, x, y + width + width / 2 + width / 4);
-            ctx.bezierCurveTo(x, y + width + width / 2, x + width + width / 2, y + width / 2 + width / 2, x + width + width / 2, y + width / 2);
-            ctx.bezierCurveTo(x + width + width / 2, y + width / 2, x + width + width / 2, y, x + width, y);
-            ctx.bezierCurveTo(x + width / 2, y - width / 2, x, y, x, y + width / 4);
+            ctx.moveTo(0, 10);
+            ctx.bezierCurveTo(0, 0, -10, -10, -25, -10);
+            ctx.bezierCurveTo(-45, -10, -45, 10, -45, 10);
+            ctx.bezierCurveTo(-45, 25, -25, 40, 0, 50);
+            ctx.bezierCurveTo(25, 40, 45, 25, 45, 10);
+            ctx.bezierCurveTo(45, 10, 45, -10, 25, -10);
+            ctx.bezierCurveTo(10, -10, 0, 0, 0, 10);
             ctx.closePath();
             ctx.fill();
             ctx.strokeStyle = 'white';
             ctx.lineWidth = 3;
             ctx.stroke();
+
+            ctx.restore();
         }
 
         function drawDiamond(ctx, size, color) {
