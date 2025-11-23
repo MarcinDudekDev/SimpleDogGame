@@ -51,6 +51,11 @@
             border: 2px solid #d4c8b8;
         }
 
+        /* Large hand cursor for all clickable elements */
+        a, button, .card, [onclick], *[role="button"] {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="56" height="72" viewBox="0 0 28 36"><path d="M8 0 L8 11 L6 11 L6 4 L4 4 L4 13 L2 13 L2 6 L0 6 L0 18 C0 18 0 20 2 20 L6 20 L6 28 C6 30 8 32 10 32 L16 32 C18 32 20 30 20 28 L20 16 L18 14 L18 8 C18 6 16 6 16 6 L16 11 L14 11 L14 3 C14 1 12 1 12 1 L12 11 L10 11 L10 1 C10 1 8 1 8 0 Z" fill="white" stroke="black" stroke-width="1.5"/></svg>') 4 0, pointer !important;
+        }
+
         body.montessori .celebration {
             display: none;
         }
